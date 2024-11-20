@@ -1,19 +1,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as dat from 'dat.gui'; // Исправленный импорт
-import { Loader } from 'three/src/loaders/Loader.js';
+import * as dat from 'dat.gui';
 
 // Debug
-const gui = new dat.GUI(); // Создание экземпляра
-
+const gui = new dat.GUI();
 
 // Loaders
-const loader = new THREE.TextureLoader()
+const loader = new THREE.TextureLoader();
 
 // Textures
-const texture = loader.load("static/texture.jpg")
-const height = loader.load("texture.jpg")
-const alpha = loader.load("texture.jpg")
+const texture = loader.load("static/texture-6.jpg");
+const height = loader.load("static/height-2.png");
+const alpha = loader.load("static/texture-6.jpg"); // Исправлен путь
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl');
@@ -21,28 +19,41 @@ const canvas = document.querySelector('canvas.webgl');
 // Scene
 const scene = new THREE.Scene();
 
+// Base Geometry and Morph Target
+const geometry1 = new THREE.PlaneGeometry(3, 3, 512, 512); // Базовая геометрия
+const geometry2 = new THREE.PlaneGeometry(3, 3, 512, 512); // Геометрия для морфинга
 
-// Objects
-const geometry = new THREE.PlaneGeometry(3, 3, 16, 16);
-const material = new THREE.MeshBasicMaterial({
+// Изменяем вторую геометрию, например, добавляем небольшую высоту
+for (let i = 0; i < geometry2.attributes.position.count; i++) {
+    geometry2.attributes.position.setZ(i, geometry2.attributes.position.getZ(i) + 0.5 * Math.sin(i));
+}
+
+// Добавляем морф-таргет к базовой геометрии
+geometry1.morphAttributes.position = [geometry2.attributes.position];
+
+// Material
+const material = new THREE.MeshStandardMaterial({
   color: 'gray',
   map: texture,
-  side: THREE.DoubleSide, // Устанавливаем рендеринг с обеих сторон
+  side: THREE.DoubleSide,
+  displacementMap: height,
+  displacementScale: 1,
+  morphTargets: true // Включаем поддержку morph targets
 });
 
-const plane = new THREE.Mesh(geometry, material);
+// Mesh
+const plane = new THREE.Mesh(geometry1, material);
 scene.add(plane);
-plane.rotation.x = 181; // Исправлено на Math.PI для более корректного поворота
+plane.rotation.x = Math.PI; // Поворот на 180 градусов
 
 // Lights
-const pointLight = new THREE.PointLight(0xffffff, 2);
+const pointLight = new THREE.PointLight(0xffffff, 600);
 pointLight.position.set(2, 3, 4);
 scene.add(pointLight);
 
-// Edit Color
+// UI Controls
 const col = { color: '#D9D9D9' };
 
-// UI
 // Plane rotation
 gui.add(plane.rotation, 'x').min(0).max(10);
 
@@ -54,6 +65,20 @@ gui.add(pointLight.position, 'z').name('Light Z').min(-10).max(10).step(0.1);
 // Color changer
 gui.addColor(col, 'color').name('Light Color').onChange(() => {
   pointLight.color.set(col.color);
+});
+
+// Displacement Scale
+const displacementControls = {
+  displacementScale: material.displacementScale
+};
+gui.add(displacementControls, 'displacementScale').min(0).max(2).step(0.01).onChange((value) => {
+  material.displacementScale = value;
+});
+
+// Morph Target Control
+const morphControls = { morphFactor: 0 };
+gui.add(morphControls, 'morphFactor').min(0).max(1).step(0.01).name('Morph Factor').onChange((value) => {
+  plane.morphTargetInfluences[0] = value;
 });
 
 // Sizes
@@ -95,9 +120,6 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-
-  // Update objects
-  // sphere.rotation.y = .5 * elapsedTime; // Не используете сферу
 
   // Update Orbital Controls
   controls.update();

@@ -9,9 +9,8 @@ const gui = new dat.GUI();
 const loader = new THREE.TextureLoader();
 
 // Textures
-const texture = loader.load("static/texture-6.jpg");
-const height = loader.load("static/height-2.png");
-const alpha = loader.load("static/texture-6.jpg"); // Исправлен путь
+const texture = loader.load("static/texture-6.jpg"); // ваша картинка
+const height = loader.load("static/height-2.png"); // ваша карта нормалей
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl');
@@ -23,7 +22,6 @@ const scene = new THREE.Scene();
 const geometry1 = new THREE.PlaneGeometry(3, 3, 512, 512); // Базовая геометрия
 const geometry2 = new THREE.PlaneGeometry(3, 3, 512, 512); // Геометрия для морфинга
 
-// Изменяем вторую геометрию, например, добавляем небольшую высоту
 for (let i = 0; i < geometry2.attributes.position.count; i++) {
     geometry2.attributes.position.setZ(i, geometry2.attributes.position.getZ(i) + 0.5 * Math.sin(i));
 }
